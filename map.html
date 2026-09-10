@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>خريطة قدرة المكاتب على تجهيز الفرق الميدانية (المعيار الرسمي)</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+  :root{
+    --maroon:#7A1F2B; --gold:#C9A227; --teal:#0F3D3E;
+    --light-gold:#F6EEDD; --light-teal:#E8F0EF; --dark:#2B2B2B; --gray:#6B6B6B;
+    --green:#2E7D46; --orange:#C97A27; --red:#B23A32; --grayfill:#8a8a8a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; }
+  #header {
+    background: linear-gradient(90deg, var(--maroon), #5c1620);
+    color: #fff; padding: 12px 22px; display:flex; align-items:center; justify-content:space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25); position:relative; z-index: 1000;
+  }
+  #header h1 { font-size: 16px; margin:0; font-weight:700; }
+  #header p { margin:2px 0 0; font-size: 11.5px; color: var(--light-gold); }
+  #srcBadge { font-size: 11px; background: rgba(255,255,255,.15); padding: 4px 10px; border-radius: 12px; }
+  #app { display:flex; height: calc(100vh - 58px); }
+  #map { flex: 1; }
+  #sidebar {
+    width: 300px; background: #fff; border-left: 3px solid var(--teal);
+    overflow-y: auto; padding: 14px; font-size: 12.5px; color: var(--dark);
+  }
+  #sidebar h2 { color: var(--maroon); font-size: 13.5px; margin: 0 0 8px; border-bottom: 2px solid var(--gold); padding-bottom:5px;}
+  .legend-item { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .dot { width:15px; height:15px; border-radius:50%; flex-shrink:0; border: 1px solid rgba(0,0,0,.25);}
+  .legend-note { font-size: 11px; color: var(--gray); margin-top:12px; line-height:1.6; background:var(--light-teal); padding:9px; border-radius:6px;}
+  .stat-box { background: var(--light-gold); border-radius: 8px; padding: 9px; margin-bottom: 12px; }
+  .stat-row { display:flex; justify-content:space-between; padding: 3px 0; }
+  .stat-row b { color: var(--maroon); }
+  .req-box { font-size: 11px; background:#f1f1f1; border-radius:6px; padding:9px; margin-top:10px; line-height:1.7;}
+  .popup-title { font-weight:700; color: var(--maroon); font-size:14px; margin-bottom:2px;}
+  .popup-city { color: var(--gray); font-size: 11px; margin-bottom:8px;}
+  .popup-row { display:flex; justify-content:space-between; font-size:12px; padding:2px 0; border-bottom: 1px dashed #ddd;}
+  .popup-badge { display:inline-block; padding:2px 10px; border-radius:12px; color:#fff; font-size:12px; font-weight:600; margin-bottom:6px;}
+  .leaflet-popup-content { direction: rtl; text-align: right; margin: 12px 14px; min-width: 220px;}
+  .leaflet-popup-content-wrapper { border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h1>مركز طب الطوارئ والدعم — مكتب شؤون المكاتب</h1>
+    <p>القدرة على تجهيز فرق ميدانية قياسية (41 فرداً + 7 مركبات، وفق الهيكل التنظيمي الرسمي)</p>
+  </div>
+  <div id="srcBadge">جاري التحميل...</div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="stat-box" id="statBox"></div>
+
+    <h2>دليل الألوان</h2>
+    <div class="legend-item"><span class="dot" style="background:var(--green)"></span> فريق كامل واحد أو أكثر</div>
+    <div class="legend-item"><span class="dot" style="background:var(--orange)"></span> موارد موجودة لكن غير كافية (صفر)</div>
+    <div class="legend-item"><span class="dot" style="background:var(--grayfill)"></span> بيانات غير كافية للحساب</div>
+
+    <div class="req-box">
+      <b>الفريق الميداني القياسي الواحد:</b><br>
+      5 أمبولانس + 2 نقل + 8 كادر طبية + 8 طبية مساعدة + 10 ميداني/سائقين + 15 إداري وقيادة، بشرط اكتمال التجهيزات الطبية 80% فأكثر.
+    </div>
+
+    <div class="legend-note">
+      اضغط على أي نقطة لعرض التفاصيل الكاملة والعامل المحدِّد. البيانات تُقرأ من مصدر حي (GitHub) إن توفر، وإلا فمن آخر نسخة محفوظة داخل الملف.
+    </div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+// ============ إعداد مصدر البيانات الحي ============
+// عدّل هذا الرابط ليشير إلى ملف offices.json المرفوع في مستودع GitHub الخاص بكم
+// مثال: https://raw.githubusercontent.com/<owner>/<repo>/<branch>/data/offices.json
+const GITHUB_DATA_URL = ""; // اتركه فارغاً لاستخدام آخر نسخة محفوظة فقط
+
+const FALLBACK_OFFICES = [{"name": "الجبل", "city": "يفرن", "lat": 32.0633, "lng": 12.5286, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 1, "trans_ready": 0, "medical": 1, "medical_assist": 13, "field": 0, "admin": 3, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الجفرة", "city": "هون", "lat": 29.1264, "lng": 15.9457, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 0, "medical_assist": 13, "field": 20, "admin": 7, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الخمس", "city": "الخمس", "lat": 32.6486, "lng": 14.2618, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 1, "medical": 16, "medical_assist": 14, "field": 16, "admin": 50, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الزاوية", "city": "الزاوية", "lat": 32.7571, "lng": 12.7276, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 13, "trans_ready": 6, "medical": 19, "medical_assist": 4, "field": 6, "admin": 30, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الزنتان", "city": "الزنتان", "lat": 31.9309, "lng": 12.251, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 7, "medical_assist": 10, "field": 43, "admin": 10, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الشاطئ", "city": "براك الشاطئ", "lat": 27.5474, "lng": 14.2864, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 0, "medical_assist": 0, "field": 0, "admin": 16, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الكفرة", "city": "الكفرة", "lat": 24.1728, "lng": 23.3166, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 3, "medical_assist": 24, "field": 29, "admin": 3, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "المرج", "city": "المرج", "lat": 32.4933, "lng": 20.8309, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 1, "trans_ready": 0, "medical": 9, "medical_assist": 19, "field": 21, "admin": 10, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "بنغازي", "city": "بنغازي", "lat": 32.1167, "lng": 20.0667, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 43, "medical_assist": 24, "field": 24, "admin": 83, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "بني وليد", "city": "بني وليد", "lat": 31.7566, "lng": 13.9835, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 3, "trans_ready": 2, "medical": 5, "medical_assist": 3, "field": 18, "admin": 39, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "تاروغاء", "city": "تاجوراء (تقريبي)", "lat": 32.883, "lng": 13.3505, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 2, "medical_assist": 4, "field": 0, "admin": 4, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "ترهونة", "city": "ترهونة", "lat": 32.4358, "lng": 13.6291, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 8, "medical_assist": 29, "field": 31, "admin": 19, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "درنة", "city": "درنة", "lat": 32.757, "lng": 22.6367, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 4, "medical_assist": 3, "field": 0, "admin": 18, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "زليتن", "city": "زليتن", "lat": 32.4674, "lng": 14.5686, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 7, "trans_ready": 2, "medical": 28, "medical_assist": 20, "field": 31, "admin": 16, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "زوارة", "city": "زوارة", "lat": 32.9312, "lng": 12.0824, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 2, "trans_ready": 1, "medical": 9, "medical_assist": 22, "field": 0, "admin": 22, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "سبها", "city": "سبها", "lat": 27.0377, "lng": 14.4283, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 5, "trans_ready": 5, "medical": 0, "medical_assist": 0, "field": 0, "admin": 0, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "سرت", "city": "سرت", "lat": 31.2089, "lng": 16.5887, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 2, "trans_ready": 2, "medical": 9, "medical_assist": 29, "field": 20, "admin": 18, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "شحات", "city": "شحات", "lat": 32.83, "lng": 21.86, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 2, "trans_ready": 2, "medical": 5, "medical_assist": 44, "field": 17, "admin": 29, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "صبراتة", "city": "صبراتة", "lat": 32.7936, "lng": 12.4886, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 14, "medical_assist": 20, "field": 24, "admin": 23, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "طبرق", "city": "طبرق", "lat": 32.0836, "lng": 23.9764, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 2, "trans_ready": 0, "medical": 6, "medical_assist": 3, "field": 0, "admin": 14, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "طرابلس", "city": "طرابلس", "lat": 32.8872, "lng": 13.1913, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 56, "medical_assist": 58, "field": 71, "admin": 95, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "غدامس", "city": "غدامس", "lat": 30.1333, "lng": 9.5, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 0, "medical_assist": 0, "field": 0, "admin": 0, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "غريان", "city": "غريان", "lat": 32.1722, "lng": 13.0206, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 3, "medical_assist": 23, "field": 25, "admin": 14, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "ككلة", "city": "ككلة", "lat": 31.8667, "lng": 12.7833, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 2, "medical_assist": 5, "field": 2, "admin": 24, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "مصراتة", "city": "مصراتة", "lat": 32.3754, "lng": 15.0925, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 19, "medical_assist": 12, "field": 7, "admin": 37, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "نالوت", "city": "نالوت", "lat": 31.8686, "lng": 10.9808, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 3, "medical_assist": 7, "field": 15, "admin": 1, "equip_pct": 0, "last_update": "2026-09-01"}];
+const FALLBACK_DATE = "2026-09-01";
+
+const map = L.map('map', { zoomControl: true }).setView([27.5, 17.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors', maxZoom: 18
+}).addTo(map);
+
+function colorFor(o){
+  if(o.insufficient) return '#8a8a8a';
+  if(o.teams >= 1) return '#2E7D46';
+  return '#C97A27';
+}
+function radiusFor(o){
+  if(o.insufficient) return 8;
+  return 8 + Math.min(o.teams, 8) * 3;
+}
+
+function render(offices, sourceLabel){
+  let totalTeams = 0, readyOffices = 0, zeroOffices = 0, insufficientOffices = 0;
+
+  offices.forEach(o => {
+    const color = colorFor(o);
+    const marker = L.circleMarker([o.lat, o.lng], {
+      radius: radiusFor(o), fillColor: color, color: '#ffffff', weight: 1.5, fillOpacity: 0.85
+    }).addTo(map);
+
+    let html = `<div class="popup-title">مكتب ${o.name}</div><div class="popup-city">${o.city} — آخر تحديث: ${o.last_update || 'غير متوفر'}</div>`;
+
+    if(o.insufficient){
+      html += `<span class="popup-badge" style="background:#8a8a8a">بيانات غير كافية للحساب</span>`;
+      html += `<div style="margin-top:6px; font-size:11.5px; color:#8a5a00;">لم يُحدِّث المكتب بياناته بعد، أو أحد الموارد الأساسية غير مسجَّل.</div>`;
+      insufficientOffices++;
+    } else {
+      html += `<span class="popup-badge" style="background:${color}">${o.teams} فريق كامل ممكن</span>`;
+      html += `<div class="popup-row"><span>أمبولانس جاهزة (الحاجة 5)</span><b>${o.amb_ready}</b></div>`;
+      html += `<div class="popup-row"><span>مركبات نقل (الحاجة 2)</span><b>${o.trans_ready}</b></div>`;
+      html += `<div class="popup-row"><span>كادر طبية (الحاجة 8)</span><b>${o.medical}</b></div>`;
+      html += `<div class="popup-row"><span>كادر طبية مساعدة (الحاجة 8)</span><b>${o.medical_assist}</b></div>`;
+      html += `<div class="popup-row"><span>ميداني/سائقين (الحاجة 10)</span><b>${o.field}</b></div>`;
+      html += `<div class="popup-row"><span>إداري وقيادة (الحاجة 15)</span><b>${o.admin}</b></div>`;
+      html += `<div class="popup-row"><span>اكتمال التجهيزات الطبية (الحد 80%)</span><b>${o.equip_pct}%</b></div>`;
+      html += `<div style="margin-top:6px; font-weight:600; color:var(--teal, #0F3D3E);">العامل المحدِّد: ${o.limiting}</div>`;
+      totalTeams += o.teams;
+      if(o.teams >= 1) readyOffices++; else zeroOffices++;
+    }
+    marker.bindPopup(html);
+    marker.bindTooltip(o.name, {permanent:false, direction:'top'});
+  });
+
+  document.getElementById('statBox').innerHTML = `
+    <div class="stat-row"><span>إجمالي الفرق الكاملة القابلة للتجهيز الآن</span><b>${totalTeams}</b></div>
+    <div class="stat-row"><span>مكاتب لديها فريق كامل واحد فأكثر</span><b>${readyOffices}</b></div>
+    <div class="stat-row"><span>مكاتب بصفر فرق (بيانات كافية)</span><b>${zeroOffices}</b></div>
+    <div class="stat-row"><span>مكاتب بيانات غير كافية</span><b>${insufficientOffices}</b></div>
+  `;
+  document.getElementById('srcBadge').textContent = sourceLabel;
+}
+
+if (GITHUB_DATA_URL) {
+  fetch(GITHUB_DATA_URL, {cache: "no-store"})
+    .then(r => { if(!r.ok) throw new Error("fetch failed"); return r.json(); })
+    .then(data => render(data, "مصدر حي (GitHub)"))
+    .catch(() => render(FALLBACK_OFFICES, `آخر نسخة محفوظة (${FALLBACK_DATE}) — تعذّر الاتصال بـ GitHub`));
+} else {
+  render(FALLBACK_OFFICES, `آخر نسخة محفوظة (${FALLBACK_DATE}) — لم يُحدَّد رابط GitHub بعد`);
+}
+</script>
+</body>
+</html>

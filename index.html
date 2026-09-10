@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحات التحكم — مركز طب الطوارئ والدعم</title>
+<style>
+  :root{
+    --maroon:#7A1F2B; --gold:#C9A227; --teal:#0F3D3E;
+    --light-gold:#F6EEDD; --light-teal:#E8F0EF; --dark:#2B2B2B; --gray:#6B6B6B;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin:0; padding:0; min-height:100%;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    direction: rtl; background: var(--light-teal);
+  }
+  #header {
+    background: linear-gradient(90deg, var(--maroon), #5c1620);
+    color:#fff; padding: 22px 26px; box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  }
+  #header h1 { margin:0; font-size: 20px; font-weight:700; }
+  #header p { margin:6px 0 0; font-size: 13px; color: var(--light-gold); }
+  #wrap { max-width: 980px; margin: 40px auto; padding: 0 20px; }
+  .cards { display:flex; gap:24px; flex-wrap:wrap; }
+  .card {
+    flex: 1 1 320px; background:#fff; border-radius: 14px; overflow:hidden;
+    box-shadow: 0 4px 18px rgba(0,0,0,.08); text-decoration:none; color:inherit;
+    border: 1px solid #e3ddd0; transition: transform .15s ease, box-shadow .15s ease;
+    display:flex; flex-direction:column;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 10px 26px rgba(0,0,0,.12); }
+  .card .band { height: 8px; background: var(--gold); }
+  .card .body { padding: 22px 22px 26px; }
+  .card h2 { margin:0 0 8px; color: var(--maroon); font-size: 18px; }
+  .card p { margin:0 0 14px; color: var(--gray); font-size: 13.5px; line-height:1.7; }
+  .card .go {
+    display:inline-block; background: var(--teal); color:#fff; font-size:13px;
+    padding: 8px 18px; border-radius: 20px; font-weight:600;
+  }
+  .note {
+    margin-top: 34px; background: var(--light-gold); border-radius: 10px; padding: 16px 20px;
+    font-size: 12.5px; color: var(--dark); line-height:1.8;
+  }
+  footer { text-align:center; color: var(--gray); font-size: 12px; margin: 40px 0 20px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>مركز طب الطوارئ والدعم — مكتب شؤون المكاتب</h1>
+  <p>لوحات المتابعة الحية لقدرة المكاتب والفرق الميدانية</p>
+</div>
+
+<div id="wrap">
+  <div class="cards">
+    <a class="card" href="map.html">
+      <div class="band"></div>
+      <div class="body">
+        <h2>خريطة قدرة الفرق الميدانية</h2>
+        <p>خريطة تفاعلية لليبيا تعرض قدرة كل مكتب على تجهيز فرق ميدانية قياسية، بالألوان حسب الجاهزية، مع تفاصيل الموارد الناقصة والفائضة لكل مكتب.</p>
+        <span class="go">فتح الخريطة ←</span>
+      </div>
+    </a>
+    <a class="card" href="ops.html">
+      <div class="band" style="background:var(--teal)"></div>
+      <div class="body">
+        <h2>داشبورد المركبات والتجهيزات والنشاط</h2>
+        <p>متابعة يومية لحالة فحص المركبات، اكتمال التجهيزات الطبية، والنشاط التشغيلي لكل مكتب — بتبويبات منفصلة لكل نوع بيانات.</p>
+        <span class="go">فتح الداشبورد ←</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="note">
+    <b>ملاحظة:</b> كلا اللوحتين تقرآن البيانات من ملف حي على GitHub إذا كان الرابط مفعَّلاً داخل كل ملف (GITHUB_DATA_URL)، وإلا تعملان بآخر نسخة بيانات محفوظة داخلهما تلقائياً دون انقطاع.
+  </div>
+</div>
+
+<footer>مركز طب الطوارئ والدعم — مكتب شؤون المكاتب</footer>
+
+</body>
+</html>

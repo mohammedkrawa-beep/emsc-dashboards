@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>داشبورد المركبات والتجهيزات الطبية والنشاط اليومي</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<style>
+  :root{
+    --maroon:#7A1F2B; --gold:#C9A227; --teal:#0F3D3E;
+    --light-gold:#F6EEDD; --light-teal:#E8F0EF; --dark:#2B2B2B; --gray:#6B6B6B;
+    --green:#2E7D46; --orange:#C97A27; --red:#B23A32; --grayfill:#8a8a8a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; height:100%; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; direction: rtl; }
+  #header {
+    background: linear-gradient(90deg, var(--teal), #0a2b2c);
+    color: #fff; padding: 12px 22px; display:flex; align-items:center; justify-content:space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,.25); position:relative; z-index: 1000;
+  }
+  #header h1 { font-size: 16px; margin:0; font-weight:700; }
+  #header p { margin:2px 0 0; font-size: 11.5px; color: var(--light-gold); }
+  #srcBadge { font-size: 11px; background: rgba(255,255,255,.15); padding: 4px 10px; border-radius: 12px; }
+  #tabs { display:flex; gap:6px; padding: 8px 22px 0; background:#fff; border-bottom: 2px solid var(--gold);}
+  .tab { padding: 8px 16px; cursor:pointer; font-size:12.5px; border-radius: 8px 8px 0 0; color: var(--gray); }
+  .tab.active { background: var(--light-gold); color: var(--maroon); font-weight:700; }
+  #app { display:flex; height: calc(100vh - 104px); }
+  #map { flex: 1; }
+  #sidebar {
+    width: 300px; background: #fff; border-left: 3px solid var(--teal);
+    overflow-y: auto; padding: 14px; font-size: 12.5px; color: var(--dark);
+  }
+  #sidebar h2 { color: var(--maroon); font-size: 13.5px; margin: 0 0 8px; border-bottom: 2px solid var(--gold); padding-bottom:5px;}
+  .legend-item { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .dot { width:15px; height:15px; border-radius:50%; flex-shrink:0; border: 1px solid rgba(0,0,0,.25);}
+  .stat-box { background: var(--light-gold); border-radius: 8px; padding: 9px; margin-bottom: 12px; }
+  .stat-row { display:flex; justify-content:space-between; padding: 3px 0; }
+  .stat-row b { color: var(--maroon); }
+  .popup-title { font-weight:700; color: var(--maroon); font-size:14px; margin-bottom:2px;}
+  .popup-city { color: var(--gray); font-size: 11px; margin-bottom:8px;}
+  .popup-row { display:flex; justify-content:space-between; font-size:12px; padding:2px 0; border-bottom: 1px dashed #ddd;}
+  .popup-badge { display:inline-block; padding:2px 10px; border-radius:12px; color:#fff; font-size:12px; font-weight:600; margin-bottom:6px;}
+  .leaflet-popup-content { direction: rtl; text-align: right; margin: 12px 14px; min-width: 210px;}
+  .leaflet-popup-content-wrapper { border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h1>مركز طب الطوارئ والدعم — مكتب شؤون المكاتب</h1>
+    <p>داشبورد المركبات والتجهيزات الطبية والنشاط التشغيلي اليومي</p>
+  </div>
+  <div id="srcBadge">جاري التحميل...</div>
+</div>
+<div id="tabs">
+  <div class="tab active" data-mode="fleet">جاهزية الأسطول</div>
+  <div class="tab" data-mode="equip">اكتمال التجهيزات</div>
+  <div class="tab" data-mode="activity">النشاط اليومي</div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="stat-box" id="statBox"></div>
+    <h2 id="legendTitle">دليل الألوان</h2>
+    <div id="legendBox"></div>
+  </div>
+  <div id="map"></div>
+</div>
+
+<script>
+const GITHUB_DATA_URL = ""; // مثال: https://raw.githubusercontent.com/<owner>/<repo>/<branch>/data/ops.json
+const FALLBACK_OPS = [{"name": "الجبل", "city": "يفرن", "lat": 32.0633, "lng": 12.5286, "fleet_ready_pct": 100, "vehicles_checked": 1, "vehicles_ready": 1, "equip_pct": 65, "calls_last_day": 6, "cases_last_day": 5, "last_vehicle_update": "2026-09-01", "last_equip_update": "2026-09-01", "last_activity_update": "2026-09-01"}, {"name": "الجفرة", "city": "هون", "lat": 29.1264, "lng": 15.9457, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "الخمس", "city": "الخمس", "lat": 32.6486, "lng": 14.2618, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "الزاوية", "city": "الزاوية", "lat": 32.7571, "lng": 12.7276, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "الزنتان", "city": "الزنتان", "lat": 31.9309, "lng": 12.251, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "الشاطئ", "city": "براك الشاطئ", "lat": 27.5474, "lng": 14.2864, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "الكفرة", "city": "الكفرة", "lat": 24.1728, "lng": 23.3166, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "المرج", "city": "المرج", "lat": 32.4933, "lng": 20.8309, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "بنغازي", "city": "بنغازي", "lat": 32.1167, "lng": 20.0667, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "بني وليد", "city": "بني وليد", "lat": 31.7566, "lng": 13.9835, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "تاروغاء", "city": "تاجوراء (تقريبي)", "lat": 32.883, "lng": 13.3505, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "ترهونة", "city": "ترهونة", "lat": 32.4358, "lng": 13.6291, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "درنة", "city": "درنة", "lat": 32.757, "lng": 22.6367, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "زليتن", "city": "زليتن", "lat": 32.4674, "lng": 14.5686, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "زوارة", "city": "زوارة", "lat": 32.9312, "lng": 12.0824, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "سبها", "city": "سبها", "lat": 27.0377, "lng": 14.4283, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "سرت", "city": "سرت", "lat": 31.2089, "lng": 16.5887, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "شحات", "city": "شحات", "lat": 32.83, "lng": 21.86, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "صبراتة", "city": "صبراتة", "lat": 32.7936, "lng": 12.4886, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "طبرق", "city": "طبرق", "lat": 32.0836, "lng": 23.9764, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "طرابلس", "city": "طرابلس", "lat": 32.8872, "lng": 13.1913, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "غدامس", "city": "غدامس", "lat": 30.1333, "lng": 9.5, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "غريان", "city": "غريان", "lat": 32.1722, "lng": 13.0206, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "ككلة", "city": "ككلة", "lat": 31.8667, "lng": 12.7833, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "مصراتة", "city": "مصراتة", "lat": 32.3754, "lng": 15.0925, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}, {"name": "نالوت", "city": "نالوت", "lat": 31.8686, "lng": 10.9808, "fleet_ready_pct": null, "vehicles_checked": 0, "vehicles_ready": 0, "equip_pct": null, "calls_last_day": null, "cases_last_day": null, "last_vehicle_update": "1899-12-30", "last_equip_update": "1899-12-30", "last_activity_update": "1899-12-30"}];
+const FALLBACK_DATE = "2026-09-01";
+
+const map = L.map('map', { zoomControl: true }).setView([27.5, 17.5], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors', maxZoom: 18
+}).addTo(map);
+
+let markers = [];
+let currentMode = 'fleet';
+let OPS = [];
+
+const legends = {
+  fleet: [
+    ['#2E7D46','80% فأكثر جاهزية أسطول'],
+    ['#C9A227','50%-79%'],
+    ['#C97A27','أقل من 50%'],
+    ['#8a8a8a','لا يوجد فحص مسجَّل بعد'],
+  ],
+  equip: [
+    ['#2E7D46','اكتمال 80% فأكثر'],
+    ['#C9A227','50%-79%'],
+    ['#C97A27','أقل من 50%'],
+    ['#8a8a8a','لا يوجد تحديث مسجَّل بعد'],
+  ],
+  activity: [
+    ['#2E7D46','نشاط عالٍ (10+ بلاغات آخر يوم)'],
+    ['#C9A227','نشاط متوسط (3-9)'],
+    ['#C97A27','نشاط منخفض (1-2)'],
+    ['#8a8a8a','لا يوجد نشاط مسجَّل / صفر'],
+  ],
+};
+
+function colorFleet(o){
+  if(o.fleet_ready_pct === null) return '#8a8a8a';
+  if(o.fleet_ready_pct >= 80) return '#2E7D46';
+  if(o.fleet_ready_pct >= 50) return '#C9A227';
+  return '#C97A27';
+}
+function colorEquip(o){
+  if(o.equip_pct === null) return '#8a8a8a';
+  if(o.equip_pct >= 80) return '#2E7D46';
+  if(o.equip_pct >= 50) return '#C9A227';
+  return '#C97A27';
+}
+function colorActivity(o){
+  const v = o.calls_last_day;
+  if(v === null || v === 0) return '#8a8a8a';
+  if(v >= 10) return '#2E7D46';
+  if(v >= 3) return '#C9A227';
+  return '#C97A27';
+}
+
+function popupHtml(o){
+  let html = `<div class="popup-title">مكتب ${o.name}</div><div class="popup-city">${o.city}</div>`;
+  html += `<div class="popup-row"><span>جاهزية الأسطول</span><b>${o.fleet_ready_pct===null?'—':o.fleet_ready_pct+'%'} (${o.vehicles_ready===null?0:o.vehicles_ready}/${o.vehicles_checked===null?0:o.vehicles_checked})</b></div>`;
+  html += `<div class="popup-row"><span>آخر فحص مركبات</span><b>${o.last_vehicle_update||'—'}</b></div>`;
+  html += `<div class="popup-row"><span>اكتمال التجهيزات الطبية</span><b>${o.equip_pct===null?'—':o.equip_pct+'%'}</b></div>`;
+  html += `<div class="popup-row"><span>آخر تحديث تجهيزات</span><b>${o.last_equip_update||'—'}</b></div>`;
+  html += `<div class="popup-row"><span>بلاغات آخر يوم</span><b>${o.calls_last_day===null?'—':o.calls_last_day}</b></div>`;
+  html += `<div class="popup-row"><span>حالات منقولة آخر يوم</span><b>${o.cases_last_day===null?'—':o.cases_last_day}</b></div>`;
+  html += `<div class="popup-row"><span>آخر تحديث نشاط</span><b>${o.last_activity_update||'—'}</b></div>`;
+  return html;
+}
+
+function clearMarkers(){ markers.forEach(m => map.removeLayer(m)); markers = []; }
+
+function draw(){
+  clearMarkers();
+  const colorFn = currentMode==='fleet' ? colorFleet : currentMode==='equip' ? colorEquip : colorActivity;
+  let sum=0, cnt=0, noData=0;
+  OPS.forEach(o => {
+    const color = colorFn(o);
+    const marker = L.circleMarker([o.lat, o.lng], {
+      radius: 9, fillColor: color, color: '#ffffff', weight: 1.5, fillOpacity: 0.85
+    }).addTo(map);
+    marker.bindPopup(popupHtml(o));
+    marker.bindTooltip(o.name, {permanent:false, direction:'top'});
+    markers.push(marker);
+    if(color === '#8a8a8a') noData++;
+    else {
+      const v = currentMode==='fleet' ? o.fleet_ready_pct : currentMode==='equip' ? o.equip_pct : o.calls_last_day;
+      if(v !== null){ sum += v; cnt++; }
+    }
+  });
+
+  const legendBox = document.getElementById('legendBox');
+  legendBox.innerHTML = legends[currentMode].map(([c,l]) => `<div class="legend-item"><span class="dot" style="background:${c}"></span>${l}</div>`).join('');
+
+  const label = currentMode==='fleet' ? 'متوسط جاهزية الأسطول (للمكاتب التي لديها بيانات)'
+              : currentMode==='equip' ? 'متوسط اكتمال التجهيزات (للمكاتب التي لديها بيانات)'
+              : 'متوسط البلاغات اليومية (للمكاتب التي لديها بيانات)';
+  const avg = cnt ? Math.round(sum/cnt) : '—';
+  document.getElementById('statBox').innerHTML = `
+    <div class="stat-row"><span>${label}</span><b>${avg}${currentMode!=='activity' && cnt ? '%':''}</b></div>
+    <div class="stat-row"><span>مكاتب لديها بيانات محدَّثة</span><b>${cnt}</b></div>
+    <div class="stat-row"><span>مكاتب بلا بيانات مسجَّلة</span><b>${noData}</b></div>
+  `;
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentMode = tab.dataset.mode;
+    draw();
+  });
+});
+
+function init(data, sourceLabel){
+  OPS = data;
+  document.getElementById('srcBadge').textContent = sourceLabel;
+  draw();
+}
+
+if (GITHUB_DATA_URL) {
+  fetch(GITHUB_DATA_URL, {cache:"no-store"})
+    .then(r => { if(!r.ok) throw new Error("fail"); return r.json(); })
+    .then(data => init(data, "مصدر حي (GitHub)"))
+    .catch(() => init(FALLBACK_OPS, `آخر نسخة محفوظة (${FALLBACK_DATE}) — تعذّر الاتصال بـ GitHub`));
+} else {
+  init(FALLBACK_OPS, `آخر نسخة محفوظة (${FALLBACK_DATE}) — لم يُحدَّد رابط GitHub بعد`);
+}
+</script>
+</body>
+</html>
