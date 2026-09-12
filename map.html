@@ -65,7 +65,7 @@
 
     <div class="req-box">
       <b>الفريق الميداني القياسي الواحد:</b><br>
-      5 أمبولانس + 2 نقل + 8 كادر طبية + 8 طبية مساعدة + 10 ميداني/سائقين + 15 إداري وقيادة، بشرط اكتمال التجهيزات الطبية 80% فأكثر.
+      5 سيارات إسعاف + 2 نقل + 8 كادر طبية + 8 طبية مساعدة + 10 ميداني/سائقين + 15 إداري وقيادة، بشرط اكتمال التجهيزات الطبية 80% فأكثر.
     </div>
 
     <div class="legend-note">
@@ -79,10 +79,29 @@
 // ============ إعداد مصدر البيانات الحي ============
 // عدّل هذا الرابط ليشير إلى ملف offices.json المرفوع في مستودع GitHub الخاص بكم
 // مثال: https://raw.githubusercontent.com/<owner>/<repo>/<branch>/data/offices.json
-const GITHUB_DATA_URL = ""; // اتركه فارغاً لاستخدام آخر نسخة محفوظة فقط
+const GITHUB_DATA_URL = "https://raw.githubusercontent.com/mohammedkrawa-beep/emsc-dashboards/refs/heads/main/data/offices.csv";
 
 const FALLBACK_OFFICES = [{"name": "الجبل", "city": "يفرن", "lat": 32.0633, "lng": 12.5286, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 1, "trans_ready": 0, "medical": 1, "medical_assist": 13, "field": 0, "admin": 3, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الجفرة", "city": "هون", "lat": 29.1264, "lng": 15.9457, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 0, "medical_assist": 13, "field": 20, "admin": 7, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الخمس", "city": "الخمس", "lat": 32.6486, "lng": 14.2618, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 1, "medical": 16, "medical_assist": 14, "field": 16, "admin": 50, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الزاوية", "city": "الزاوية", "lat": 32.7571, "lng": 12.7276, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 13, "trans_ready": 6, "medical": 19, "medical_assist": 4, "field": 6, "admin": 30, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الزنتان", "city": "الزنتان", "lat": 31.9309, "lng": 12.251, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 7, "medical_assist": 10, "field": 43, "admin": 10, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الشاطئ", "city": "براك الشاطئ", "lat": 27.5474, "lng": 14.2864, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 0, "medical_assist": 0, "field": 0, "admin": 16, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "الكفرة", "city": "الكفرة", "lat": 24.1728, "lng": 23.3166, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 3, "medical_assist": 24, "field": 29, "admin": 3, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "المرج", "city": "المرج", "lat": 32.4933, "lng": 20.8309, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 1, "trans_ready": 0, "medical": 9, "medical_assist": 19, "field": 21, "admin": 10, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "بنغازي", "city": "بنغازي", "lat": 32.1167, "lng": 20.0667, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 43, "medical_assist": 24, "field": 24, "admin": 83, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "بني وليد", "city": "بني وليد", "lat": 31.7566, "lng": 13.9835, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 3, "trans_ready": 2, "medical": 5, "medical_assist": 3, "field": 18, "admin": 39, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "تاروغاء", "city": "تاجوراء (تقريبي)", "lat": 32.883, "lng": 13.3505, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 2, "medical_assist": 4, "field": 0, "admin": 4, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "ترهونة", "city": "ترهونة", "lat": 32.4358, "lng": 13.6291, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 8, "medical_assist": 29, "field": 31, "admin": 19, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "درنة", "city": "درنة", "lat": 32.757, "lng": 22.6367, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 4, "medical_assist": 3, "field": 0, "admin": 18, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "زليتن", "city": "زليتن", "lat": 32.4674, "lng": 14.5686, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 7, "trans_ready": 2, "medical": 28, "medical_assist": 20, "field": 31, "admin": 16, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "زوارة", "city": "زوارة", "lat": 32.9312, "lng": 12.0824, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 2, "trans_ready": 1, "medical": 9, "medical_assist": 22, "field": 0, "admin": 22, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "سبها", "city": "سبها", "lat": 27.0377, "lng": 14.4283, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 5, "trans_ready": 5, "medical": 0, "medical_assist": 0, "field": 0, "admin": 0, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "سرت", "city": "سرت", "lat": 31.2089, "lng": 16.5887, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 2, "trans_ready": 2, "medical": 9, "medical_assist": 29, "field": 20, "admin": 18, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "شحات", "city": "شحات", "lat": 32.83, "lng": 21.86, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 2, "trans_ready": 2, "medical": 5, "medical_assist": 44, "field": 17, "admin": 29, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "صبراتة", "city": "صبراتة", "lat": 32.7936, "lng": 12.4886, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 14, "medical_assist": 20, "field": 24, "admin": 23, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "طبرق", "city": "طبرق", "lat": 32.0836, "lng": 23.9764, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 2, "trans_ready": 0, "medical": 6, "medical_assist": 3, "field": 0, "admin": 14, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "طرابلس", "city": "طرابلس", "lat": 32.8872, "lng": 13.1913, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 56, "medical_assist": 58, "field": 71, "admin": 95, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "غدامس", "city": "غدامس", "lat": 30.1333, "lng": 9.5, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 0, "medical_assist": 0, "field": 0, "admin": 0, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "غريان", "city": "غريان", "lat": 32.1722, "lng": 13.0206, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 3, "medical_assist": 23, "field": 25, "admin": 14, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "ككلة", "city": "ككلة", "lat": 31.8667, "lng": 12.7833, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 2, "medical_assist": 5, "field": 2, "admin": 24, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "مصراتة", "city": "مصراتة", "lat": 32.3754, "lng": 15.0925, "insufficient": true, "teams": null, "limiting": "-", "amb_ready": 0, "trans_ready": 0, "medical": 19, "medical_assist": 12, "field": 7, "admin": 37, "equip_pct": 0, "last_update": "2026-09-01"}, {"name": "نالوت", "city": "نالوت", "lat": 31.8686, "lng": 10.9808, "insufficient": false, "teams": 0, "limiting": "تجهيزات طبية", "amb_ready": 0, "trans_ready": 0, "medical": 3, "medical_assist": 7, "field": 15, "admin": 1, "equip_pct": 0, "last_update": "2026-09-01"}];
 const FALLBACK_DATE = "2026-09-01";
+
+// يحوّل نص CSV (بالترويسة name,city,lat,lng,insufficient,teams,limiting,amb_ready,trans_ready,medical,medical_assist,field,admin,equip_pct,last_update)
+// إلى نفس شكل المصفوفة المستخدمة أعلاه (FALLBACK_OFFICES)
+function parseOfficesCSV(text){
+  const lines = text.replace(/\r/g, "").split("\n").filter(l => l.length > 0);
+  const headers = lines[0].split(",").map(h => h.trim());
+  const numCols = new Set(["lat","lng","teams","amb_ready","trans_ready","medical","medical_assist","field","admin","equip_pct"]);
+  return lines.slice(1).map(line => {
+    const cells = line.split(",");
+    const row = {};
+    headers.forEach((h, i) => {
+      let v = (cells[i] !== undefined ? cells[i] : "").trim();
+      if (h === "insufficient") { row[h] = (v === "true"); }
+      else if (numCols.has(h)) { row[h] = (v === "" ? null : Number(v)); }
+      else { row[h] = v; }
+    });
+    return row;
+  });
+}
 
 const map = L.map('map', { zoomControl: true }).setView([27.5, 17.5], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -116,7 +135,7 @@ function render(offices, sourceLabel){
       insufficientOffices++;
     } else {
       html += `<span class="popup-badge" style="background:${color}">${o.teams} فريق كامل ممكن</span>`;
-      html += `<div class="popup-row"><span>أمبولانس جاهزة (الحاجة 5)</span><b>${o.amb_ready}</b></div>`;
+      html += `<div class="popup-row"><span>سيارات إسعاف جاهزة (الحاجة 5)</span><b>${o.amb_ready}</b></div>`;
       html += `<div class="popup-row"><span>مركبات نقل (الحاجة 2)</span><b>${o.trans_ready}</b></div>`;
       html += `<div class="popup-row"><span>كادر طبية (الحاجة 8)</span><b>${o.medical}</b></div>`;
       html += `<div class="popup-row"><span>كادر طبية مساعدة (الحاجة 8)</span><b>${o.medical_assist}</b></div>`;
@@ -142,8 +161,8 @@ function render(offices, sourceLabel){
 
 if (GITHUB_DATA_URL) {
   fetch(GITHUB_DATA_URL, {cache: "no-store"})
-    .then(r => { if(!r.ok) throw new Error("fetch failed"); return r.json(); })
-    .then(data => render(data, "مصدر حي (GitHub)"))
+    .then(r => { if(!r.ok) throw new Error("fetch failed"); return r.text(); })
+    .then(text => render(parseOfficesCSV(text), "مصدر حي (GitHub)"))
     .catch(() => render(FALLBACK_OFFICES, `آخر نسخة محفوظة (${FALLBACK_DATE}) — تعذّر الاتصال بـ GitHub`));
 } else {
   render(FALLBACK_OFFICES, `آخر نسخة محفوظة (${FALLBACK_DATE}) — لم يُحدَّد رابط GitHub بعد`);
